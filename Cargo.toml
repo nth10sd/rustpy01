@@ -1,0 +1,19 @@
+[package]
+name = "rustpy01"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "rustpy01"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+file_diff = "1.0.0"
+pyo3 = "0.19.2"
+testdir = "0.8.0"
+
+[profile.release]
+# debug = true      # Debug symbols for our profiler.
+lto = true        # Link-time optimization.
+codegen-units = 1 # Slower compilation but faster code.

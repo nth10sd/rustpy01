@@ -156,4 +156,5 @@ cython_debug/
 .vscode/
 .idea/
 
-/rustpy01/_version.txt
+# For maturin usage in this repo
+Cargo.lock
