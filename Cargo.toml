@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 file_diff = "1.0.0"
-pyo3 = "0.19.2"
+pyo3 = "0.20.0"
 testdir = "0.8.0"
 
 [profile.release]
