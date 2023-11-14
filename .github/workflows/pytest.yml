@@ -1,0 +1,237 @@
+# For more information on GitHub Actions for Python projects, see: https://git.io/JtENw
+
+name: pytest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    # Uncomment this line if we are running on a solitary OS
+    # runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Uncomment this line if we are running on multiple operating systems
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # pip cache dependencies to save time
+      - name: Get pip cache dir
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        id: pip-cache
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+      - name: pip cache
+        uses: actions/cache@v3
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v3
+        if: startsWith(runner.os, 'Windows')
+        with:
+          # 20221026 This only worked w/set-output in the pip cache dir step on Win
+          # Make pip-cache step above workable for all 3 OS'es if using the line below to
+          # see if things still work
+          # path: ${{ steps.pip-cache.outputs.dir }}
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      # - name: Use deploy key
+      #   uses: webfactory/ssh-agent@v0.7.0
+      #   with:
+      #       ssh-private-key: ${{ secrets.ZZBASE_TOKEN }}
+
+      - name: Install pip prerequisites
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: python -u -m pip install --upgrade pip setuptools wheel ;
+      - name: Removing subdomain to make requirements.txt setup work in CI (POSIX-only)
+        if: steps.pip-cache.outputs.cache-hit != 'true' && (startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS'))
+        run: python -c 'import fileinput; [print(line.partition("git@")[0] + "git@github.com/" + line.partition(".github.com/")[-1] if (".github.com/" in line and not line.startswith("#")) else line, end="") for line in fileinput.input(inplace=True)]' requirements.txt ; git diff ;
+      - name: Removing subdomain to make requirements.txt setup work in CI (Windows-only)
+        if: steps.pip-cache.outputs.cache-hit != 'true' && startsWith(runner.os, 'Windows')
+        run: python -c 'import fileinput; [print(line.partition(\"git@\")[0] + \"git@github.com/\" + line.partition(\".github.com/\")[-1] if (\".github.com/\" in line and not line.startswith(\"#\")) else line, end=\"\") for line in fileinput.input(inplace=True)]' requirements.txt ; git diff ;
+      - name: Install requirements from possibly-changed requirements.txt
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt ;
+      - name: Revert requirements.txt if changed
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: git checkout -- requirements.txt ;
+      - name: Install package in development mode
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: pip install --upgrade -e . ;
+
+      - name: Run with ruff
+        run: python -u -m ruff .
+      - name: Run with refurb to find code that can be written in a more modern way
+        if: startsWith(runner.os, 'Linux')
+        run: python -u -m refurb .
+      - name: Run with vulture to find dead code
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        run: |
+          python -c 'exec("from pathlib import Path;import shutil;import subprocess;\ntry: import tomllib;\nexcept ImportError: import tomli as tomllib;\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp: c = tomllib.load(fp); n = c[\"project\"][\"name\"];\nif not (v := shutil.which(\"vulture\")): raise RuntimeError(\"Please first install vulture\");\nfor z in sorted({x.split(\"  # \",maxsplit=1)[0] for x in sorted(subprocess.run([y for y in [v,\".\",\".vulture_allowlist\" if Path(\".vulture_allowlist\").is_file() else \"\"] if y],capture_output=True,text=True).stdout.rstrip().splitlines()) if not x.startswith(\"# \")}): print(z)")'
+      - name: Run pyright
+        if: startsWith(runner.os, 'Linux')
+        run: python -u -m pyright
+
+      - name: Install OS prerequisites
+        if: startsWith(runner.os, 'Linux')
+        run: sudo apt-get update ; sudo apt-get install ripgrep
+      - name: Search for existing linter ignore lines in Python
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          rg -t py --stats "(?:(?:flake8|noqa|pylint|pyright|type): *(?:disable|ignore|noqa|[a-zA-Z]+[0-9]+)| Any|REPLACEME)" \
+            $(find . -type f -name "*.py" -not -path "./build/lib/*" ! -name "conf_correct.py") || true
+      - name: Ensure we are not increasing the number of ignore lines as a guideline
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          if [ $(rg -t py --stats \
+                    "(?:(?:flake8|noqa|pylint|pyright|type): *(?:disable|ignore|noqa|[a-zA-Z]+[0-9]+)| Any|REPLACEME)" \
+                    $(find . -type f -name "*.py" -not -path "./build/lib/*" ! -name "conf_correct.py") \
+                      | awk "/ matches/ && "\!"/ contained matches/" \
+                      | cut -d " " -f1) -lt 5 ] ;
+          then exit 0 ; else exit 1 ; fi ;
+      - name: Run shellcheck
+        if: startsWith(runner.os, 'Linux')
+        run: rg -t sh --files | xargs shellcheck
+      - name: Run bashate
+        if: startsWith(runner.os, 'Linux')
+        run: rg -t sh --files | xargs bashate -i E006
+      - name: Generate Sphinx docs (inspect this output for Sphinx errors)
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          ( pushd docs/ > /dev/null && ./gen-sphinx-html.sh 2>&1 | rg ": (ERROR|WARNING|CRITICAL): " ; popd > /dev/null ; ) || true
+      - name: Reset Git repo after Sphinx documentation generation
+        if: startsWith(runner.os, 'Linux')
+        run: git clean -fd
+      - name: Fail if Sphinx doc generation has Sphinx errors
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          if [ "$( pushd docs/ > /dev/null && ./gen-sphinx-html.sh 2>&1 | rg ": (ERROR|WARNING|CRITICAL): " | wc -l ; popd > /dev/null ; )" != "0" ] ; then exit 1 ; fi ;
+      - name: Reset Git repo a second time after Sphinx documentation generation
+        if: startsWith(runner.os, 'Linux')
+        run: git clean -fd
+
+      - name: Run tools using pytest
+        run: |
+          python -u -m pytest --cov --mypy --pylint --ruff --ruff-format
+
+      # CodeQL analysis section START
+      # Linux-only, enable on GitHub for public repos and private repos on Enterprise plan with Advanced Security
+      # IMPORTANT setup steps:
+      #   1) If this is a private repo NOT on a GitHub Enterprise plan with Advanced Security, disable the last CodeQL result upload step
+      #   2) Check ${{ secrets.CODEQL_UPLOAD_TOKEN }} has been added and updated in the GitHub settings of this repo
+      #   3) Check CodeQL languages for this repo are updated correctly
+      - name: CodeQL languages, comma-separated, for list see https://codeql.github.com/docs/codeql-cli/creating-codeql-databases/
+        if: startsWith(runner.os, 'Linux')
+        run: echo "CODEQL_LANGUAGES=python," >> "$GITHUB_ENV"
+      # CodeQL preprocessing checks commence
+      - name: Current git branch ref
+        if: startsWith(runner.os, 'Linux')
+        run: echo "$GITHUB_REF"
+      - name: Current git commit
+        if: startsWith(runner.os, 'Linux')
+        run: echo $(git rev-parse --verify HEAD)
+      - name: Current repository name
+        if: startsWith(runner.os, 'Linux')
+        run: echo "$GITHUB_REPOSITORY"
+      - name: Find CodeQL files on GitHub Actions runner OS
+        if: startsWith(runner.os, 'Linux')
+        run: pushd /opt/hostedtoolcache/CodeQL/ || exit ; export CODEQL_VER=( * ) ; echo CODEQL_DIR="/opt/hostedtoolcache/CodeQL/${CODEQL_VER[-1]}/x64/codeql" >> "$GITHUB_ENV" ; popd || exit ;
+      - name: Find CodeQL binary on GitHub Actions runner OS
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          if [ -f $(echo "$CODEQL_DIR"/codeql) ] ;
+          then
+            echo CODEQL_BIN=$(echo "$CODEQL_DIR"/codeql) >> "$GITHUB_ENV" ;
+          else
+            exit 1 ;
+          fi ;
+      - name: Get the codeql version
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          "$CODEQL_BIN" --version
+      - name: Check that the qlpacks exist for specified languages
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          for LANG in $(echo "$CODEQL_LANGUAGES" | tr "," " ") ;
+          do
+            if ! "$CODEQL_BIN" resolve qlpacks | grep -q "$LANG-" ;
+            then
+              exit 1 ;
+            fi ;
+          done ;
+      - name: Check that the codeql queries exist for specified languages
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          for LANG in $(echo "$CODEQL_LANGUAGES" | tr "," " ") ;
+          do
+            if ! ls "$CODEQL_DIR"/qlpacks/codeql/"$LANG"-queries/*.*/codeql-suites/ | grep -q "$LANG-" ;
+            then
+              exit 1 ;
+            fi ;
+          done ;
+      # CodeQL preprocessing checks finish
+      - name: Create codeql database for specified languages
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          "$CODEQL_BIN" database create codeql-result-database/ --db-cluster --language="$CODEQL_LANGUAGES" ;
+      - name: Run codeql analysis on each specified languages
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          for LANG in $(echo "$CODEQL_LANGUAGES" | tr "," " ") ;
+          do
+            "$CODEQL_BIN" database analyze codeql-result-database/"$LANG"/ --sarif-category="$LANG" --output=out-"$LANG".sarif --format=sarif-latest --threads=0 ;
+          done ;
+      - name: Upload codeql results to public GitHub repo or private repo on an enterprise plan with Advanced Security
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          echo "$CODEQL_TOKEN" |
+          for SARIF in $(ls out-*.sarif) ;
+          do
+            "$CODEQL_BIN" github upload-results --commit=$(git rev-parse --verify HEAD) --ref="$GITHUB_REF" --repository="$GITHUB_REPOSITORY" --sarif="$SARIF" --github-auth-stdin ;
+          done ;
+        env:
+          CODEQL_TOKEN: ${{ secrets.CODEQL_UPLOAD_TOKEN }}
+      # We should search through grep after trying to upload, if applicable
+      # grep returns exit code 1 if string is not found but specified file is present
+      # grep returns exit code 2 if specified file is not present
+      - name: Look for startLine to see if any issues are found, if so, return exit code 1
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          for OUT_FILE in $(ls out-*.sarif) ;
+            do
+              if ! (
+                grep --context=11 startLine "$OUT_FILE" ;
+                EXIT_CODE=$? ;
+                if [ "$EXIT_CODE" -eq 0 ] ;
+                then
+                  exit 1;
+                fi ;
+              ) ;
+              then
+                exit 1 ;
+              fi ;
+            done ;
+      # CodeQL analysis section END
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        continue-on-error: true # codecov limits number of uploads allowed for each commit
+        with:
+          # token: ${{ secrets.CODECOV_TOKEN }}
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true

@@ -1,0 +1,4 @@
+include rustpy01/_version.txt
+include rustpy01/py.typed
+
+prune */tests
