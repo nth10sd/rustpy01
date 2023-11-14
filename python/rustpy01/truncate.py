@@ -32,7 +32,7 @@ def py_truncate_file_lines(filename: Path | str, lines: int) -> None:
 def sample_truncation() -> None:
     """Sample truncation."""
     root_folder = Path(__file__).parents[2]
-    desired_file = root_folder / "pydocs-v3pt12-210-copies-over-23M-lines.txt"
+    desired_file = root_folder / "enwik9.txt"
 
     if desired_file.is_file():
         # Swap this with py_truncate_file_lines or vice versa

@@ -41,11 +41,25 @@ Clone the repository and cd into it.
 Development command:
 
 ```
-cargo clippy --all-targets -- -D warnings && python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt && cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ && maturin develop
+cargo clippy --all-targets -- -D warnings && python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt && cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ && maturin develop --release
 ```
 
-Switch `maturin develop` (debug Rust code) to `maturin develop --release` for optimized Rust code.
+Switch `maturin develop` for debug Rust code.
 
+## Run tools on your package
+
+(All commands here must be run within the `venv`, in the main repository directory - not any subfolders)
+
+For comprehensive tests and all linters:
+```
+python -u -m pytest --cov --mypy --pylint --ruff --ruff-format
+```
+
+## Prepare text data for truncation
+
+Download [enwik9.zip](http://mattmahoney.net/dc/enwik9.zip) test data for the [Large Text Compression Benchmark](http://mattmahoney.net/dc/textdata.html). Extract it and move the extracted file to the root folder of this `git` repository, renaming it to `enwik9.txt`. Verify its SHA-1 hash.
+
+It is the first 109 bytes of the English Wikipedia dump on Mar. 3, 2006.
 
 ## Running
 
@@ -55,19 +69,15 @@ Run the module using:
 (venv-rustpy01) $ python -u -m rustpy01
 ```
 
-Ensure any file is present in the root folder of the `git` repository with the hardcoded filename `pydocs-v3pt12-210-copies-over-23M-lines.txt`, it will then be truncated to 1 million lines after running the following command:
+Ensure any file is present in the root folder of the `git` repository with the hardcoded filename `enwik9.txt`, it will then be truncated to 1 million lines after running the following command:
 
 ```
 (venv-rustpy01) $ python -u -m rustpy01.truncate
 ```
 
-## Run tools on your package
-
-(All commands here must be run within the `venv`, in the main repository directory - not any subfolders)
-
-For comprehensive tests and all linters:
+This command may also be useful:
 ```
-python -u -m pytest --black --cov --mypy --pylint --ruff
+(venv-rustpy01) $ date ; cp ~/backup-enwik9.txt enwik9.txt ; time python -u -m rustpy01.truncate ; date
 ```
 
 ## Documentation generation via Sphinx
