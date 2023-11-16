@@ -13,7 +13,7 @@ This demo was tested with Python 3.10 and the following rustup/Rust versions:
 $ rustup --version
 rustup 1.26.0 (5af9b9484 2023-04-05)
 info: This is the version for the rustup toolchain manager, not the rustc compiler.
-info: The currently active `rustc` version is `rustc 1.73.0 (cc66ad468 2023-10-03)`
+info: The currently active `rustc` version is `rustc 1.74.0 (79e9716c9 2023-11-13)`
 ```
 
 Create a new Python 3.10 (install it beforehand) virtual environment using `venv` and switch to it.
