@@ -13,6 +13,9 @@ file_diff = "1.0.0"
 pyo3 = "0.20.0"
 testdir = "0.8.0"
 
+[lints.rust]
+unsafe_code = "forbid" # Allow unsafe code only if you understand what you are doing
+
 [profile.release]
 # debug = true      # Debug symbols for our profiler.
 lto = true        # Link-time optimization.
