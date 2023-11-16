@@ -24,14 +24,12 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "bashate ~= 2.1.1",
-    "black ~= 23.9.1",
     'coverage ~= 7.3.2; python_version >= "3.11"',
     'coverage[toml] ~= 7.3.2; python_version <= "3.10"',
     "mypy ~= 1.6.1",
     "pylint ~= 3.0.2",
     'pyright==1.1.335; platform_system == "Linux"',
     "pytest ~= 7.4.3",
-    "pytest-black ~= 0.3.12",
     "pytest-cov ~= 4.1.0",
     "pytest-dependency ~= 0.5.1",
     "pytest-instafail ~= 0.5.0",
