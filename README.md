@@ -37,10 +37,16 @@ Clone the repository and cd into it.
 
 ## maturin-related (Rust)
 
-Development command:
+Development command for Linux and Windows:
 
 ```
 cargo clippy --all-targets -- -D warnings && python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt && cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ && maturin develop --release
+```
+
+Development command for macOS (which uses `zsh`):
+
+```
+cargo clippy --all-targets -- -D warnings && python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt && setopt +o nomatch && cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ && setopt -o nomatch && maturin develop --release
 ```
 
 Switch `maturin develop` for debug Rust code.
