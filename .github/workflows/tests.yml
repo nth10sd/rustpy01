@@ -1,0 +1,105 @@
+# For more information on GitHub Actions for Python projects, see: https://git.io/JtENw
+
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Get pip cache dir
+        id: pip-cache
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+      - name: pip cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Rustup latest 64-bit Rust, as it seems faster than Rust-related workflows
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path && source "$HOME"/.cargo/env
+      - name: Install cargo-binstall
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install cargo-binstall
+        if: startsWith(runner.os, 'Windows')
+        run: Set-ExecutionPolicy Unrestricted -Scope Process; iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1").Content
+      - name: Install cargo-tarpaulin
+        run: cargo binstall -y cargo-tarpaulin ;
+      - name: Run cargo clippy (Linter-like checker for Rust code)
+        run: cargo clippy --all-targets -- -D warnings ;
+
+      - name: Update pip prerequisites
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: python -u -m pip install --upgrade pip setuptools ;
+      - name: Install requirements from requirements.txt
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt ;
+      - name: Run cargo tarpaulin (code coverage for Rust code)
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'Windows')
+        run: cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ ;
+      - name: Run cargo tarpaulin (code coverage for Rust code)
+        if: startsWith(runner.os, 'macOS')
+        run: setopt +o nomatch ; cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ ; setopt -o nomatch ;
+      - name: Install using maturin, optimized Rust code
+        run: maturin develop --release ;
+
+      - name: Run with ruff
+        run: python -u -m ruff .
+      - name: Run with refurb to find code that can be written in a more modern way
+        run: python -u -m refurb .
+      - name: Run with vulture to find dead code
+        run: |
+          python -c 'exec("from pathlib import Path;import shutil;import subprocess;\ntry: import tomllib;\nexcept ImportError: import tomli as tomllib;\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp: c = tomllib.load(fp); n = c[\"project\"][\"name\"];\nif not (v := shutil.which(\"vulture\")): raise RuntimeError(\"Please first install vulture\");\nfor z in sorted({x.split(\"  # \",maxsplit=1)[0] for x in sorted(subprocess.run([y for y in [v,\".\",\".vulture_allowlist\" if Path(\".vulture_allowlist\").is_file() else \"\"] if y],capture_output=True,text=True).stdout.rstrip().splitlines()) if not x.startswith(\"# \")}): print(z)")'
+      - name: Run pyright
+        run: python -u -m pyright
+
+      - name: Run shellcheck
+        if: startsWith(runner.os, 'Linux')
+        run: rg -t sh --files | xargs shellcheck
+      - name: Run bashate
+        if: startsWith(runner.os, 'Linux')
+        run: rg -t sh --files | xargs bashate -i E006
+      - name: Generate Sphinx docs (inspect this output for Sphinx errors)
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          ( pushd docs/ > /dev/null && ./gen-sphinx-html.sh 2>&1 | rg ": (ERROR|WARNING|CRITICAL): " ; popd > /dev/null ; ) || true
+      - name: Reset Git repo after Sphinx documentation generation
+        if: startsWith(runner.os, 'Linux')
+        run: git clean -fd
+      - name: Fail if Sphinx doc generation has Sphinx errors
+        if: startsWith(runner.os, 'Linux')
+        run: |
+          if [ "$( pushd docs/ > /dev/null && ./gen-sphinx-html.sh 2>&1 | rg ": (ERROR|WARNING|CRITICAL): " | wc -l ; popd > /dev/null ; )" != "0" ] ; then exit 1 ; fi ;
+      - name: Reset Git repo a second time after Sphinx documentation generation
+        if: startsWith(runner.os, 'Linux')
+        run: git clean -fd
+
+      - name: Run tools using pytest under code coverage
+        run: python -u -m pytest --cov --mypy --pylint --ruff --ruff-format
+      - name: Try running the package
+        run: python -u -m rustpy01
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        continue-on-error: true # codecov limits number of uploads allowed for each commit
+        with:
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true
