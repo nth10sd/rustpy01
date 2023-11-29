@@ -33,7 +33,14 @@ jobs:
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Rustup latest 64-bit Rust, as it seems faster than Rust-related workflows
-        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path && source "$HOME"/.cargo/env
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
+      - name: Update current environment to access Rust compiler
+        if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
+        run: source "$HOME"/.cargo/env ;
+      - name: Update current environment to access Rust compiler
+        if: startsWith(runner.os, 'Windows')
+        run: $addPath = "$env:USERPROFILE\.cargo\bin" ; $scope = 'User' ; [Environment]::SetEnvironmentVariable('PATH', ([Environment]::GetEnvironmentVariable('PATH', $scope) + ";$addPath"), $scope) ; $env:PATH += ";$addPath" ;
+
       - name: Install cargo-binstall
         if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
