@@ -58,7 +58,7 @@ jobs:
         if: startsWith(runner.os, 'macOS')
         run: setopt +o nomatch ; cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ ; setopt -o nomatch ;
       - name: Install using maturin, optimized Rust code
-        run: maturin develop --release ;
+        run: env VIRTUAL_ENV=$(python -c 'import sys; print(sys.base_prefix)') maturin develop --release ;
 
       - name: Run with ruff
         run: python -u -m ruff .
