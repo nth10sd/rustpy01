@@ -96,7 +96,7 @@ Run the module using:
 python -u -m rustpy01
 ```
 
-Ensure any file is present in the root folder of the `git` repository with the hardcoded filename `enwik9.txt`, it will then be truncated to 1 million lines. Here is a sample command:
+Ensure any file is present in the root folder of the `git` repository with the hardcoded filename `enwik9.txt`, it will then be truncated to 100k lines. Here is a sample command:
 
 Linux or macOS:
 ```
