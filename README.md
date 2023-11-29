@@ -100,12 +100,12 @@ Ensure any file is present in the root folder of the `git` repository with the h
 
 Linux or macOS:
 ```
-date ; cp ~/backup-enwik9.txt enwik9.txt ; time python -u -m rustpy01.truncate ; date
+cp ~/backup-enwik9.txt enwik9.txt ; date ; time python -u -m rustpy01.truncate ; date ; rm enwik9.txt ;
 ```
 
 Windows:
 ```
-date ; cp ~/backup-enwik9.txt enwik9.txt ; Measure-Command { python -u -m rustpy01.truncate | Out-Default } ; date
+cp ~/backup-enwik9.txt enwik9.txt ; date ; Measure-Command { python -u -m rustpy01.truncate | Out-Default } ; date ; rm enwik9.txt ;
 ```
 
 ## Documentation generation via Sphinx
