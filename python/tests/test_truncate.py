@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def test_fast_py_truncate_file_lines(tmp_path: Path) -> None:
-    """Test the fast_py_truncate_file_lines() function.
+    """Test the fast_py_truncate_file_lines function.
 
     :param tmp_path: Fixture from pytest for creating a temporary directory
     """
