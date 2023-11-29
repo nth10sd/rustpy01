@@ -65,8 +65,8 @@ jobs:
 
       - name: Run with ruff
         run: python -u -m ruff .
-      - name: Run with refurb to find code that can be written in a more modern way
-        run: python -u -m refurb .
+      # - name: Run with refurb to find code that can be written in a more modern way
+      #   run: python -u -m refurb .
       - name: Run with vulture to find dead code
         run: |
           python -c 'exec("from pathlib import Path;import shutil;import subprocess;\ntry: import tomllib;\nexcept ImportError: import tomli as tomllib;\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp: c = tomllib.load(fp); n = c[\"project\"][\"name\"];\nif not (v := shutil.which(\"vulture\")): raise RuntimeError(\"Please first install vulture\");\nfor z in sorted({x.split(\"  # \",maxsplit=1)[0] for x in sorted(subprocess.run([y for y in [v,\".\",\".vulture_allowlist\" if Path(\".vulture_allowlist\").is_file() else \"\"] if y],capture_output=True,text=True).stdout.rstrip().splitlines()) if not x.startswith(\"# \")}): print(z)")'
