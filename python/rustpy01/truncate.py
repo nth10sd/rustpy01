@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def py_truncate_file_lines(filename: Path | str, lines: int) -> None:
+def fast_py_truncate_file_lines(filename: Path | str, lines: int) -> None:
     """Truncate files to the desired number of lines.
 
     Adapted from https://stackoverflow.com/a/27672002
@@ -35,7 +35,7 @@ def sample_truncation() -> None:
     desired_file = root_folder / "enwik9.txt"
 
     if desired_file.is_file():
-        # Swap this with py_truncate_file_lines or vice versa
+        # Swap this with fast_py_truncate_file_lines or vice versa
         truncate_file_lines(desired_file, 1000000)
 
 
