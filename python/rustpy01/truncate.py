@@ -14,18 +14,18 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def fast_py_truncate_file_lines(filename: Path | str, lines: int) -> None:
-    """Truncate files to the desired number of lines.
+def fast_py_truncate_file_lines(filename: Path | str, lines_wanted: int) -> None:
+    """Truncate files to desired number of lines, optimized algorithm in Python.
 
     Adapted from https://stackoverflow.com/a/27672002
 
     :param filename: Filename of file to truncate
-    :param lines: Desired number of lines to retain
+    :param lines_wanted: Desired number of lines to retain
     """
     with Path(filename).open("r+", encoding="utf-8", errors="surrogateescape") as f:
         blackhole: Callable[[Iterable[Any]], None] = deque((), 0).extend
         file_iterator = iter(f.readline, "")
-        blackhole(islice(file_iterator, lines))
+        blackhole(islice(file_iterator, lines_wanted))
         f.truncate(f.tell())
 
 
