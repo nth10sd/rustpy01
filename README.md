@@ -43,9 +43,9 @@ Make sure Cargo is usable and use `cargo-binstall` to install `cargo-tarpaulin` 
 cargo binstall -y cargo-tarpaulin
 ```
 
-Clone the repository and cd into it:
+Clone the repository and cd into it (replace `<repo>` with desired location):
 ```
-git clone <repo> ; cd <repo> ;
+$ git clone <repo> ; cd <repo> ;
 ```
 
 ## maturin-related (Rust)
