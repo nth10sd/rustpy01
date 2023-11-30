@@ -1,4 +1,4 @@
-(Insert GitHub Actions/codecov status badges here)
+[![codecov](https://codecov.io/gh/nth10sd/rustpy01/graph/badge.svg?token=ABPPKT6D0W)](https://codecov.io/gh/nth10sd/rustpy01)
 
 # README
 
