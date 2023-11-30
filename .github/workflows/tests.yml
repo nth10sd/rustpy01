@@ -101,6 +101,40 @@ jobs:
       - name: Try running the package
         run: python -u -m rustpy01
 
+      - name: Use aria2 to download enwik9 zipped test data for the Large Text Compression Benchmark.
+        if: startsWith(runner.os, 'Linux')
+        run: aria2c http://mattmahoney.net/dc/enwik9.zip
+      - name: Unzip enwik9 test data
+        if: startsWith(runner.os, 'Linux')
+        run: unzip enwik9.zip
+      - name: Verify enwik9 test data
+        if: startsWith(runner.os, 'Linux')
+        run: echo "2996e86fb978f93cca8f566cc56998923e7fe581 enwik9" | sha1sum -c
+      - name: Copy enwik9 file to backup location
+        if: startsWith(runner.os, 'Linux')
+        run: cp enwik9 "$HOME"/backup-enwik9.txt ;
+      - name: Run benchmark command from README, should default to Rust function
+        if: startsWith(runner.os, 'Linux')
+        run: cp ~/backup-enwik9.txt enwik9.txt ; date ; time python -u -m rustpy01.truncate ; date ; rm enwik9.txt ;
+
+      - name: Switch to the naive Python function
+        if: startsWith(runner.os, 'Linux')
+        run: sd "truncate_file_lines\(desired_file," "py_truncate_file_lines(desired_file," python/rustpy01/truncate.py ;
+      - name: Re-run benchmark command from README, this time with the naive Python function
+        if: startsWith(runner.os, 'Linux')
+        run: cp ~/backup-enwik9.txt enwik9.txt ; date ; time python -u -m rustpy01.truncate ; date ; rm enwik9.txt ;
+      - name: Revert truncate.py since it has been changed
+        run: git checkout -- python/rustpy01/truncate.py ;
+
+      - name: Switch to the fast Python function
+        if: startsWith(runner.os, 'Linux')
+        run: sd "truncate_file_lines\(desired_file," "fast_py_truncate_file_lines(desired_file," python/rustpy01/truncate.py ;
+      - name: Re-run benchmark command from README, this time with the fast Python function
+        if: startsWith(runner.os, 'Linux')
+        run: cp ~/backup-enwik9.txt enwik9.txt ; date ; time python -u -m rustpy01.truncate ; date ; rm enwik9.txt ;
+      - name: Revert truncate.py since it has been changed
+        run: git checkout -- python/rustpy01/truncate.py ;
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         continue-on-error: true # codecov limits number of uploads allowed for each commit
