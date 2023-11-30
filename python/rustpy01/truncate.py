@@ -32,7 +32,9 @@ def py_truncate_file_lines(filename: Path | str, lines_wanted: int) -> None:
     target_file = temp_file.with_suffix("").with_suffix(
         f'{Path(filename).suffix.removesuffix("~")}'
     )
-    temp_file.replace(target_file)
+    # Needs to be opened in binary mode or else Windows uses CRLF instead of LF
+    with temp_file.open("rb") as f, target_file.open("wb") as g:
+        g.writelines(line.replace(b"\r\n", b"\n") for line in f)
 
 
 def fast_py_truncate_file_lines(filename: Path | str, lines_wanted: int) -> None:
