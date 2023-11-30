@@ -103,7 +103,7 @@ jobs:
 
       - name: Use aria2 to download enwik9 zipped test data for the Large Text Compression Benchmark.
         if: startsWith(runner.os, 'Linux')
-        run: aria2c http://mattmahoney.net/dc/enwik9.zip
+        run: aria2c https://web.archive.org/web/20231130154044/http://mattmahoney.net/dc/enwik9.zip
       - name: Unzip enwik9 test data
         if: startsWith(runner.os, 'Linux')
         run: unzip enwik9.zip
