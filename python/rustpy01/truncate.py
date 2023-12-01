@@ -35,6 +35,7 @@ def py_truncate_file_lines(filename: Path | str, lines_wanted: int) -> None:
     # Needs to be opened in binary mode or else Windows uses CRLF instead of LF
     with temp_file.open("rb") as f, target_file.open("wb") as g:
         g.writelines(line.replace(b"\r\n", b"\n") for line in f)
+    temp_file.unlink()
 
 
 def fast_py_truncate_file_lines(filename: Path | str, lines_wanted: int) -> None:
