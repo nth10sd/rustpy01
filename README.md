@@ -108,7 +108,7 @@ Windows:
 cp ~/backup-enwik9.txt enwik9.txt ; date ; Measure-Command { python -u -m rustpy01.truncate | Out-Default } ; date ; rm enwik9.txt ;
 ```
 
-## Documentation generation via Sphinx
+## Documentation generation via Sphinx (Linux-only)
 
 * Change into `docs/` folder: `cd docs/`
 * Run generation command - you **must** first be in the `docs/` directory: `./gen-sphinx-html.sh`
