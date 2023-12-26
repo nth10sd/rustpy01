@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin ~= 1.3.2"]
+requires = ["maturin ~= 1.4.0"]
 build-backend = "maturin"
 
 [project]
@@ -16,19 +16,19 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    'maturin ~= 1.3.2; platform_system != "Linux"',           # patchelf is only supported on Linux
-    'maturin[patchelf] ~= 1.3.2; platform_system == "Linux"',
+    'maturin ~= 1.4.0; platform_system != "Linux"',           # patchelf is only supported on Linux
+    'maturin[patchelf] ~= 1.4.0; platform_system == "Linux"',
     "wheel >= 0.41.2",
 ]
 
 [project.optional-dependencies]
 test = [
     "bashate ~= 2.1.1",
-    'coverage ~= 7.3.2; python_version >= "3.11"',
-    'coverage[toml] ~= 7.3.2; python_version <= "3.10"',
-    "mypy ~= 1.6.1",
-    "pylint ~= 3.0.2",
-    'pyright==1.1.335; platform_system == "Linux"',
+    'coverage ~= 7.3.4; python_version >= "3.11"',
+    'coverage[toml] ~= 7.3.4; python_version <= "3.10"',
+    "mypy ~= 1.7.1",
+    "pylint ~= 3.0.3",
+    'pyright==1.1.342; platform_system == "Linux"',
     "pytest ~= 7.4.3",
     "pytest-cov ~= 4.1.0",
     "pytest-dependency ~= 0.5.1",
@@ -37,9 +37,9 @@ test = [
     "pytest-pylint ~= 0.21.0",
     "pytest-randomly ~= 3.15.0",
     "pytest-ruff ~= 0.2.1",
-    "pytest-xdist ~= 3.3.1",
-    "refurb ~= 1.23.0",
-    "ruff ~= 0.1.5",
+    "pytest-xdist ~= 3.5.0",
+    "refurb ~= 1.26.0",
+    "ruff ~= 0.1.9",
     "sphinx ~= 7.2.6",
     "vulture ~= 2.10",
 ]
@@ -190,6 +190,7 @@ exclude = ["**/node_modules", "**/__pycache__", "**/.*", "build/", "target/"]
 [tool.pytest.ini_options]
 addopts = [
     "-n=auto",
+    "--dist=loadscope",
     "--durations=7",
     "--ignore=target/",
     "--instafail",
@@ -197,7 +198,6 @@ addopts = [
     "--pylint-error-types=CRWEFI",
     "--strict-markers",
 ]
-filterwarnings = []
 log_level = "DEBUG"
 markers = ["online", "slow"]
 xfail_strict = true
