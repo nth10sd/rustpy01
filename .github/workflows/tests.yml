@@ -67,7 +67,7 @@ jobs:
         run: python -u -m ruff .
       - name: Run with refurb to find code that can be written in a more modern way
         run: |
-          python -c 'exec("from pathlib import Path;import shutil;import subprocess;\ntry: import tomllib;\nexcept ImportError: import tomli as tomllib;\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp: c = tomllib.load(fp); n = c[\"project\"][\"name\"];\nif not (r := shutil.which(\"refurb\")): raise RuntimeError(\"Please first install refurb\");\nprint(subprocess.run([y for y in [r,\"--\",\"-p\",n] if y],capture_output=True,text=True).stdout.rstrip())")'
+          python -c 'exec("from pathlib import Path;import shutil,subprocess,sys;\ntry: import tomllib;\nexcept ImportError: import tomli as tomllib;\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp: c = tomllib.load(fp); n = c[\"project\"][\"name\"];\nif not (r := shutil.which(\"refurb\")): raise RuntimeError(\"Please first install refurb\");\nsubp=subprocess.run([y for y in [r,\"--\",\"-p\",n] if y],stderr=subprocess.STDOUT,stdout=subprocess.PIPE,text=True);print(subp.stdout.rstrip())");raise SystemExit(subp.returncode)'
       - name: Run with vulture to find dead code
         if: startsWith(runner.os, 'Linux') || startsWith(runner.os, 'macOS')
         run: |
