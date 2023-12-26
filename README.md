@@ -52,7 +52,7 @@ $ git clone <repo> ; cd <repo> ;
 
 Development command for Linux and Windows:
 ```
-cargo clippy --all-targets -- -D warnings ; python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt ; cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ ; maturin develop --release ;
+cargo clippy --all-targets -- -D warnings ; python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt ; cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ ; maturin develop --release --strip ;
 ```
 
 Development command for macOS (which uses `zsh`):
